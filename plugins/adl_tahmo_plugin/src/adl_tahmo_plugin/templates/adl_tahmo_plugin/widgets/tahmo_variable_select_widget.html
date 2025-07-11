@@ -1,0 +1,186 @@
+<div>
+    <div class="w-field__errors" style="margin-bottom: 10px">
+        <p class="error-message" id="error-message-sensor-type" style="display: none"></p>
+    </div>
+
+    <div style="display: flex;align-items: center">
+        <select name="{{ widget.name }}" {% include "django/forms/widgets/attrs.html" %}>
+        </select>
+        <div id="spinner-sensor-type" style="margin-left: 10px;display: none">
+            <svg class="icon icon-spinner w-w-8 w-h-8" aria-hidden="true">
+                <use href="#icon-spinner"></use>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        if (!window.StationVariableSelectWidget) {
+            window.StationVariableSelectWidget = class {
+                #defaultOption = {label: "---------", value: ""};
+
+                constructor({
+                                widgetId,
+                                variablesUrl,
+                                initialVariableShortCode,
+                                networkConnectionInputId,
+                                errorMessageElId,
+                                spinnerId,
+                                defaultOption,
+                            }) {
+
+                    this.widgetId = widgetId;
+                    this.variablesUrl = variablesUrl;
+                    this.initialVariableShortCode = initialVariableShortCode;
+                    this.#defaultOption = defaultOption || this.#defaultOption;
+
+                    this.selectInput = document.getElementById(this.widgetId);
+                    this.networkConnectionInput = document.getElementById(networkConnectionInputId);
+                    this.errorMessageEl = document.getElementById(errorMessageElId);
+                    this.spinner = document.getElementById(spinnerId);
+
+                    if (!this.selectInput || !this.networkConnectionInput || !this.errorMessageEl || !this.spinner) {
+                        throw new Error('One or more required DOM elements are missing.');
+                    }
+
+                    this.debouncedSetStationSensorTypeOptions = this.debounce(this.debouncedSetStationSensorTypeOptions.bind(this), 300);
+                    this.init();
+                }
+
+                async init() {
+                    const selectedNetworkConnectionId = this.networkConnectionInput.value;
+
+                    if (selectedNetworkConnectionId) {
+                        await this.debouncedSetStationSensorTypeOptions(selectedNetworkConnectionId);
+                    }
+
+                    this.networkConnectionInput.addEventListener('change', (event) => {
+                        this.reset()
+                        this.clearInitial()
+                    });
+                }
+
+                clearInitial() {
+                    this.initialVariableShortCode = null;
+                }
+
+                reset() {
+                    this.clearSelectInput();
+                    this.clearError();
+                }
+
+                showSpinner() {
+                    this.spinner.style.display = 'block';
+                }
+
+                hideSpinner() {
+                    this.spinner.style.display = 'none';
+                }
+
+                setSelectedOption(value) {
+                    this.selectInput.value = value;
+                }
+
+                async debouncedSetStationSensorTypeOptions(selectedNetworkConnectionId) {
+                    this.clearSelectInput();
+
+                    if (selectedNetworkConnectionId) {
+                        this.showSpinner();
+
+                        const response = await this.getVariablesForConnection(selectedNetworkConnectionId);
+                        this.hideSpinner();
+
+                        if (response.error) {
+                            this.addError(response.error);
+                            return;
+                        }
+
+                        this.clearError()
+                        this.populateSelectInput(response);
+
+                        if (this.initialVariableShortCode) {
+                            this.setSelectedOption(this.initialVariableShortCode);
+
+                            // trigger change
+                            const event = new CustomEvent('change', {
+                                bubbles: true, detail: {
+                                    custom: true
+                                }
+                            });
+
+                            this.selectInput.dispatchEvent(event);
+                        }
+                    }
+                }
+
+                addError(message) {
+                    this.errorMessageEl.textContent = message;
+                    this.errorMessageEl.style.display = 'block';
+                }
+
+                clearError() {
+                    this.errorMessageEl.textContent = '';
+                    this.errorMessageEl.style.display = 'none';
+                }
+
+                async getVariablesForConnection(connectionId) {
+                    try {
+                        const response = await fetch(`${this.variablesUrl}?connection_id=${connectionId}`);
+                        if (!response.ok) {
+                            const res = await response.json();
+                            if (res.error) {
+                                throw new Error(res.error);
+                            } else {
+                                // get error message from server
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                        }
+                        return await response.json();
+                    } catch (error) {
+                        console.error('Fetch error:', error);
+                        return {error: error.message};
+                    }
+                }
+
+                clearSelectInput() {
+                    this.selectInput.innerHTML = '';
+                }
+
+                appendOptionToSelect(option) {
+                    const optionElement = this.createOptionElement(option);
+                    this.selectInput.appendChild(optionElement);
+                }
+
+                populateSelectInput(options) {
+                    this.clearSelectInput();
+                    this.appendOptionToSelect(this.#defaultOption);
+                    options.forEach(option => this.appendOptionToSelect(option));
+                }
+
+                createOptionElement(option) {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.label;
+                    return optionElement;
+                }
+
+                debounce(func, wait) {
+                    let timeout;
+                    return function (...args) {
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => func.apply(this, args), wait);
+                    };
+                }
+            }
+        }
+
+        // Initialize the widget
+        new window.StationVariableSelectWidget({
+            widgetId: '{{ widget.attrs.id }}',
+            variablesUrl: '{{ tahmo_variables_url }}',
+            initialVariableShortCode: '{{ widget.value|default_if_none:"" }}',
+            networkConnectionInputId: 'id_network_connection',
+            errorMessageElId: 'error-message-sensor-type',
+            spinnerId: 'spinner-sensor-type',
+        });
+    </script>
+</div>

@@ -1,0 +1,10 @@
+{
+  "name": "ADL TAHMO Plugin",
+  "version": "0.0.1",
+  "description": "An ADL plugin collecting observation data and saving to ADL database",
+  "author": "TODO",
+  "author_url": "TODO",
+  "url": "TODO",
+  "license": "TODO",
+  "contact": "TODO"
+}
