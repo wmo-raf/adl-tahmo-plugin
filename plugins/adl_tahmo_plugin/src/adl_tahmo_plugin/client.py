@@ -100,6 +100,11 @@ class TahmoAPIClient:
                 time = data.get('time')
                 variable = data.get('variable')
                 value = data.get('value')
+                
+                # Convert relative humidity from decimal to percentage
+                if variable == "rh" and value is not None:
+                    value = value * 100
+                
                 quality = data.get('quality', None)
                 if not measurements_by_date.get(time):
                     measurements_by_date[time] = {"datetime": time}
