@@ -1,5 +1,6 @@
 from adl.core.models import NetworkConnection, StationLink, DataParameter, Unit
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from timezone_field import TimeZoneField
@@ -35,7 +36,16 @@ class TahmoConnection(NetworkConnection):
         verbose_name_plural = "TAHMO API Connections"
     
     def get_extra_model_admin_links(self):
-        return []
+        columns = [
+            {
+                "label": _("View Metadata"),
+                "url": reverse("tahmo_metadata_for_connection", args=[self.id]),
+                "icon_name": "list-ul",
+                "kwargs": {"attrs": {"target": "_blank"}}
+            }
+        ]
+        
+        return columns
     
     def get_api_client(self):
         """

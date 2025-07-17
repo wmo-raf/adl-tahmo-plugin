@@ -1,8 +1,10 @@
 from adl.core.utils import get_object_or_none
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, render
 from django.utils.translation import gettext_lazy as _
 
 from .models import TahmoConnection
+from .utils import get_stations
 
 
 def get_tahmo_stations_for_connection(request):
@@ -22,17 +24,7 @@ def get_tahmo_stations_for_connection(request):
         
         return JsonResponse(response, status=400)
     
-    client = network_conn.get_api_client()
-    
-    stations_dict = client.get_stations()
-    
-    stations_list = []
-    
-    for key, station in stations_dict.items():
-        station_code = station.get("code")
-        station_name = station.get("location", {}).get("name", "")
-        station_label = f"{station_name} ({station_code})"
-        stations_list.append({"label": station_label, "value": station_code})
+    stations_list = get_stations(network_conn)
     
     return JsonResponse(stations_list, safe=False)
 
@@ -73,3 +65,14 @@ def get_tahmo_variables_for_connection(request):
     ]
     
     return JsonResponse(variables_list, safe=False)
+
+
+def get_metadata(request, connection_id):
+    network_conn = get_object_or_404(TahmoConnection, pk=connection_id)
+    
+    stations = get_stations(network_conn)
+    
+    return render(request, template_name="adl_tahmo_plugin/metadata.html", context={
+        "connection": network_conn,
+        "stations": stations
+    })

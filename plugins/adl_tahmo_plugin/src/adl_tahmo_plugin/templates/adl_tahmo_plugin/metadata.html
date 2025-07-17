@@ -1,0 +1,31 @@
+{% extends "wagtailadmin/generic/base.html" %}
+
+{% load i18n wagtailadmin_tags static %}
+
+{% block main_content %}
+    <h1>
+        {% translate "Tahmo Station Metadata" %}
+    </h1>
+
+    <div style="margin-top: 40px">
+        <h2>
+            Stations Count: {{ stations|length }}
+        </h2>
+        <table class="listing">
+            <thead>
+            <tr>
+                <th>
+                    {% translate "Station" %}
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for station in stations %}
+                <tr>
+                    <td>{{ station.label }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
