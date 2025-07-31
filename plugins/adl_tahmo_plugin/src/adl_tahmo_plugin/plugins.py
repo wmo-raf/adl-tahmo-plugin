@@ -73,6 +73,9 @@ class TahmoPlugin(Plugin):
         start_date_utc_format = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_date_utc_format = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         
+        logger.info(
+            f"[TAHMO_PLUGIN] Fetching data for {station_name} from {start_date_utc_format} to {end_date_utc_format}")
+        
         # Get the latest data from the TAML API
         records = self.client.get_measurements(station_link.tahmo_station_code, start_date=start_date_utc_format,
                                                end_date=end_date_utc_format)
