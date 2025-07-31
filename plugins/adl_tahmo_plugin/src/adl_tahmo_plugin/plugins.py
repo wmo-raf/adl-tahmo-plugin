@@ -67,8 +67,8 @@ class TahmoPlugin(Plugin):
         if station_link.start_date:
             start_date = dj_timezone.localtime(station_link.start_date, station_timezone)
         else:
-            # set to end_date of the previous hour
-            start_date = end_date - timedelta(hours=1)
+            # TAHMO API could have delays, so we fetch data for the past 24
+            start_date = end_date - timedelta(days=1)
         
         start_date_utc_format = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_date_utc_format = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
