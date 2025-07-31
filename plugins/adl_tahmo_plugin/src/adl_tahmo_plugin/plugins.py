@@ -67,8 +67,22 @@ class TahmoPlugin(Plugin):
         if station_link.start_date:
             start_date = dj_timezone.localtime(station_link.start_date, station_timezone)
         else:
-            # TAHMO API could have delays, so we fetch data for the past 24
-            start_date = end_date - timedelta(days=1)
+            # check if the station has a last observation time
+            last_observation_time = ObservationRecord.objects.filter(
+                connection=self.network_connection,
+                station=station_link.station
+            ).order_by('-time').values_list('time', flat=True).first()
+            
+            if last_observation_time:
+                logger.debug(f"[TAHMO_PLUGIN] Last observation found for {station_name}: {last_observation_time}")
+                # If there is a last observation, set the start date to the last observation time
+                start_date = dj_timezone.localtime(last_observation_time, station_timezone)
+            else:
+                # If no last observation, set to the previous day
+                logger.debug(f"[TAHMO_PLUGIN] No last observation found for {station_name} - using previous day as start date.")
+                
+                # TAHMO API could have delays, so we fetch data for the past 24
+                start_date = end_date - timedelta(days=1)
         
         start_date_utc_format = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_date_utc_format = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
