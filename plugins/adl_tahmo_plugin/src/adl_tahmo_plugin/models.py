@@ -62,9 +62,10 @@ class TahmoStationLink(StationLink):
     timezone = TimeZoneField(default='UTC', verbose_name=_("Station Timezone"),
                              help_text=_("Timezone used by the station for recording observations"))
     start_date = models.DateTimeField(blank=True, null=True, validators=[validate_start_date],
-                                      verbose_name=_("Start Date"),
-                                      help_text=_("Start date for data pulling. Select a past date to include the "
-                                                  "historical data. Leave blank for collecting realtime data only"), )
+                                      verbose_name=_("Initial Collection start date"),
+                                      help_text=_(
+                                          "The date to start collection data for the first collection. "
+                                          "Ignored if any data has been collected already for this station"), )
     
     panels = StationLink.panels + [
         FieldPanel("tahmo_station_code", widget=TahmoStationSelectWidget),
@@ -78,6 +79,25 @@ class TahmoStationLink(StationLink):
     
     def __str__(self):
         return f"{self.tahmo_station_code} - {self.station} - {self.station.wigos_id}"
+    
+    def get_variable_mappings(self):
+        """
+        Returns the variable mappings for this station link.
+        """
+        return self.variable_mappings.all()
+    
+    def get_first_collection_date(self):
+        """
+        Returns the first collection date for this station link.
+        Returns None if no start date is set.
+        """
+        return self.start_date
+    
+    def get_timezone(self):
+        """
+        Returns the timezone for this station link.
+        """
+        return self.timezone
 
 
 class TahmoStationLinkVariableMapping(Orderable):
@@ -92,3 +112,17 @@ class TahmoStationLinkVariableMapping(Orderable):
         FieldPanel("tahmo_variable_shortcode", widget=TahmoVariableSelectWidget),
         FieldPanel("tahmo_parameter_unit"),
     ]
+    
+    @property
+    def source_parameter_name(self):
+        """
+        Returns the shortcode of the TAHMO variable.
+        """
+        return self.tahmo_variable_shortcode
+    
+    @property
+    def source_parameter_unit(self):
+        """
+        Returns the unit of the TAHMO variable.
+        """
+        return self.tahmo_parameter_unit

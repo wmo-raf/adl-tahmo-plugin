@@ -107,7 +107,7 @@ class TahmoAPIClient:
                 
                 quality = data.get('quality', None)
                 if not measurements_by_date.get(time):
-                    measurements_by_date[time] = {"datetime": time}
+                    measurements_by_date[time] = {"observation_time": time}
                 if value and quality == 1:
                     measurements_by_date[time][variable] = value
         
