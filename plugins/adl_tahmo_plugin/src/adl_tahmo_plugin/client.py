@@ -1,6 +1,7 @@
 import requests
 from django.core.cache import cache
 from requests.auth import HTTPBasicAuth
+from dateutil import parser as date_parser
 
 
 # API Reference: https://tahmo.org/docs/TAHMO_Measurements_API_documentation_latest.pdf
@@ -107,7 +108,8 @@ class TahmoAPIClient:
                 
                 quality = data.get('quality', None)
                 if not measurements_by_date.get(time):
-                    measurements_by_date[time] = {"observation_time": time}
+                    time_obj = date_parser.isoparse(time)
+                    measurements_by_date[time] = {"observation_time": time_obj}
                 if value and quality == 1:
                     measurements_by_date[time][variable] = value
         
