@@ -59,8 +59,6 @@ class TahmoStationLink(StationLink):
     Model representing a link to a TAHMO station.
     """
     tahmo_station_code = models.CharField(max_length=255, verbose_name="Tahmo Station")
-    timezone = TimeZoneField(default='UTC', verbose_name=_("Station Timezone"),
-                             help_text=_("Timezone used by the station for recording observations"))
     start_date = models.DateTimeField(blank=True, null=True, validators=[validate_start_date],
                                       verbose_name=_("Initial Collection start date"),
                                       help_text=_(
@@ -92,12 +90,6 @@ class TahmoStationLink(StationLink):
         Returns None if no start date is set.
         """
         return self.start_date
-    
-    def get_timezone(self):
-        """
-        Returns the timezone for this station link.
-        """
-        return self.timezone
 
 
 class TahmoStationLinkVariableMapping(Orderable):
