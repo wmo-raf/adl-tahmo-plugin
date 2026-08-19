@@ -6,13 +6,14 @@ from dateutil import parser as date_parser
 
 # API Reference: https://tahmo.org/docs/TAHMO_Measurements_API_documentation_latest.pdf
 class TahmoAPIClient:
-    def __init__(self, api_key, api_secret, base_url='https://datahub.tahmo.org', use_cache=True):
+    def __init__(self, api_key, api_secret, base_url='https://datahub.tahmo.org', timeout=30, use_cache=True):
         self.api_key = api_key
         
         if not base_url.endswith('/'):
             base_url += '/'
         
         self.base_url = base_url
+        self.timeout = timeout
         self.use_cache = use_cache
         
         self.auth = HTTPBasicAuth(api_key, api_secret)
@@ -23,7 +24,7 @@ class TahmoAPIClient:
             return cache.get(cache_key)
         else:
             url = f'{self.base_url}services/assets/v2/stations'
-            response = requests.get(url, auth=self.auth)
+            response = requests.get(url, auth=self.auth, timeout=self.timeout)
             
             response.raise_for_status()
             
@@ -46,7 +47,7 @@ class TahmoAPIClient:
             return cache.get(cache_key)
         
         url = f'{self.base_url}services/assets/v2/variables'
-        response = requests.get(url, auth=self.auth)
+        response = requests.get(url, auth=self.auth, timeout=self.timeout)
         response.raise_for_status()
         
         variables = response.json().get('data', [])
@@ -80,7 +81,7 @@ class TahmoAPIClient:
         if sensor:
             params['sensor'] = sensor
         
-        response = requests.get(url, auth=self.auth, params=params)
+        response = requests.get(url, auth=self.auth, params=params, timeout=self.timeout)
         response.raise_for_status()
         
         results = response.json().get('results', [])
