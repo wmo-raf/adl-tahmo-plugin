@@ -73,16 +73,16 @@ class TahmoAPIClient:
     def __init__(self, api_key, api_secret, base_url=DEFAULT_BASE_URL, timeout=DEFAULT_TIMEOUT, retries=None,
                  use_cache=True):
         self.api_key = api_key
-        
+
         if not base_url.endswith('/'):
             base_url += '/'
-        
+
         self.base_url = base_url
         self.timeout = timeout
         self.use_cache = use_cache
-        
+
         self.auth = HTTPBasicAuth(api_key, api_secret)
-        
+
         self.session = requests.Session()
         if retries is not None:
             # Mounted only when asked for. requests' default adapter already
@@ -91,59 +91,59 @@ class TahmoAPIClient:
             adapter = requests.adapters.HTTPAdapter(max_retries=retries)
             self.session.mount("https://", adapter)
             self.session.mount("http://", adapter)
-    
+
     def get_stations(self):
         cache_key = f"{self.api_key}-tahmo-stations"
         if self.use_cache and cache.get(cache_key):
             return cache.get(cache_key)
-        
+
         url = f'{self.base_url}{STATIONS_PATH}'
         response = self.session.get(url, auth=self.auth, timeout=self.timeout)
-        
+
         _raise_for_status(response)
-        
+
         stations_data = _parsed_list(response, 'data')
-        
+
         stations_data_dict_by_code = {}
         for station in stations_data:
             station_code = str(station['code'])
             stations_data_dict_by_code[station_code] = station
-        
+
         if self.use_cache:
             # cache for 24 hours
             cache.set(cache_key, stations_data_dict_by_code, 86400)
-        
+
         return stations_data_dict_by_code
-    
+
     def get_variables(self):
         cache_key = f"{self.api_key}-tahmo-variables"
         if self.use_cache and cache.get(cache_key):
             return cache.get(cache_key)
-        
+
         url = f'{self.base_url}{VARIABLES_PATH}'
         response = self.session.get(url, auth=self.auth, timeout=self.timeout)
         _raise_for_status(response)
-        
+
         variables = _parsed_list(response, 'data')
         variables_dict_by_shortcode = {}
-        
+
         for variable_item in variables:
             variable = variable_item.get("variable")
             variable_shortcode = variable.get("shortcode")
             if variable_shortcode:
                 variables_dict_by_shortcode[variable_shortcode] = variable
-        
+
         if self.use_cache:
             # cache for 24 hours
             cache.set(cache_key, variables_dict_by_shortcode, 86400)
-        
+
         return variables_dict_by_shortcode
-    
+
     def get_measurements(self, station_code, collection_type="raw", start_date=None, end_date=None, variable=None,
                          sensor=None):
         """
         Fetch measurements for one station, returning ``(records, sources_count)``.
-        
+
         The count is of the raw entries the response carried for the requested
         window, read before the collapse into per-timestamp records and before
         the quality filter below — a count taken after either would let a
@@ -152,10 +152,10 @@ class TahmoAPIClient:
         belongs to the plugin, not here.
         """
         url = f'{self.base_url}services/measurements/v2/stations/{station_code}/measurements/{collection_type}'
-        
+
         params = {
         }
-        
+
         if start_date:
             params['start'] = start_date
         if end_date:
@@ -164,39 +164,39 @@ class TahmoAPIClient:
             params['variable'] = variable
         if sensor:
             params['sensor'] = sensor
-        
+
         response = self.session.get(url, auth=self.auth, params=params, timeout=self.timeout)
         _raise_for_status(response)
-        
+
         results = _parsed_list(response, 'results')
         data = None
         if results:
             series = results[0].get('series', [])
             if series:
                 data = series[0]
-        
+
         measurements_by_date = {}
         values = []
-        
+
         if data:
             columns = data.get('columns', [])
             values = data.get('values', [])
-            
+
             for item in values:
                 data = {col: val for col, val in zip(columns, item)}
                 time = data.get('time')
                 variable = data.get('variable')
                 value = data.get('value')
-                
+
                 # Convert relative humidity from decimal to percentage
                 if variable == "rh" and value is not None:
                     value = value * 100
-                
+
                 quality = data.get('quality', None)
                 if not measurements_by_date.get(time):
                     time_obj = date_parser.isoparse(time)
                     measurements_by_date[time] = {"observation_time": time_obj}
                 if value and quality == 1:
                     measurements_by_date[time][variable] = value
-        
+
         return list(measurements_by_date.values()), len(values)
