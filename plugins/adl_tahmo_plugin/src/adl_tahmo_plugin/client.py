@@ -196,7 +196,10 @@ class TahmoAPIClient:
                 if not measurements_by_date.get(time):
                     time_obj = date_parser.isoparse(time)
                     measurements_by_date[time] = {"observation_time": time_obj}
-                if value and quality == 1:
+                # ``is not None``, not truthiness: a reading of 0 (no rain,
+                # calm wind, 0 °C) is an observation the station made, and
+                # dropping it left those intervals as missing data.
+                if value is not None and quality == 1:
                     measurements_by_date[time][variable] = value
 
         return list(measurements_by_date.values()), len(values)

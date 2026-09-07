@@ -329,6 +329,24 @@ class SourcesCountTests(SimpleTestCase):
         self.assertEqual(len(records), 2)
         self.assertNotIn("te", records[1])
 
+    def test_a_zero_reading_is_kept(self):
+        # 0 is an observation (no rain, calm wind), not an absence; only a
+        # missing value or a failed quality flag drops a reading.
+        payload = {"results": [{"series": [{
+            "columns": ["time", "variable", "value", "quality"],
+            "values": [
+                ["2026-08-01T00:00:00Z", "pr", 0, 1],
+                ["2026-08-01T00:00:00Z", "ws", 0.0, 1],
+                ["2026-08-01T00:00:00Z", "te", None, 1],
+            ],
+        }]}]}
+        client = TahmoAPIClient(api_key="key", api_secret="secret")
+        with mock.patch.object(client.session, "get", return_value=FakeResponse(200, payload)):
+            records, _count = client.get_measurements("TA00001")
+        self.assertEqual(records[0]["pr"], 0)
+        self.assertEqual(records[0]["ws"], 0.0)
+        self.assertNotIn("te", records[0])
+
 
 class ExceptionStampingTests(SimpleTestCase):
     """A failed ingestion run carries the source's own verdict into the
