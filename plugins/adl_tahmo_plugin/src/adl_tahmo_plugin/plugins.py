@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from adl.core.registries import Plugin
 
@@ -26,8 +26,14 @@ class TahmoPlugin(Plugin):
         return start_date
 
     def get_station_data(self, station_link, start_date=None, end_date=None):
-        start_date_utc_format = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_date_utc_format = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        # Core hands the window over in the station's local timezone; the API
+        # reads the bounds as UTC instants. Convert before formatting — a bare
+        # strftime with a "Z" relabels local wall-clock time as UTC and shifts
+        # the requested window by the station's offset, so on a UTC+3
+        # connection the three hours after the latest saved record were never
+        # asked for.
+        start_date_utc_format = start_date.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_date_utc_format = end_date.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         tahmo_http_client = station_link.network_connection.get_api_client()
 
