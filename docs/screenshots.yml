@@ -1,0 +1,103 @@
+# Screenshot manifest for the ADL TAHMO Plugin guide (docs/guide.md).
+# Regenerate from the adl repo:  scripts/capture-plugin-docs.sh ../adl-plugins/adl-tahmo-plugin
+# Fixture: docs/screenshots/fixture.json (connection 1 = "TAHMO Data Hub (demo)",
+# station links 1..2 = DEMO001, DEMO002).
+# The Data Hub host is hard-coded in the plugin (datahub.tahmo.org), so unlike the
+# other API plugins a mock cannot be pointed at by URL. This set is therefore captured
+# against the real Data Hub, with live credentials in docs/screenshots/credentials.env
+# (TAHMO_API_KEY, TAHMO_API_SECRET, TAHMO_STATION_CODE, TAHMO_STATION_CODE_2) — the file
+# is git-ignored, and the API key and secret are masked in the connection-form shot.
+# Without them the fixture's dummy defaults are used and the run captures honest
+# authentication failures instead of a healthy instance.
+# Format: defaults + screenshots (name/url/setup/callouts/capture), run by adl's
+# docs/screenshots/capture/capture.py; output derives from name: docs/images/<name>.png.
+# Callouts are numbered badges/outlines only — never text in images.
+# Every entry has been run against the stack this file describes.
+
+defaults:
+  viewport:
+  - 1440
+  - 900
+  padding: 12
+screenshots:
+- name: tahmo_connection_form
+  url: /tahmoconnection/edit/1/
+  setup:
+  - fill: { selector: '#id_api_key', value: '••••••••••••' }
+  - fill: { selector: '#id_api_secret', value: '••••••••••••' }
+  callouts:
+  - badge: { target: '#id_api_key', n: 1 }
+  - badge: { target: '#id_api_secret', n: 2 }
+  capture:
+    selector: "#w-editor-form"
+- name: tahmo_station_link_form
+  url: /tahmostationlink/edit/1/
+  setup:
+  - wait_until: "document.querySelector('#id_tahmo_station_code').options.length > 1"
+  # This set is captured against a real Data Hub account, so the pages carry
+  # that account's station names and codes. Substituted for demo identifiers
+  # before the shot; nothing else on the page is touched.
+  - eval: "maskLabels('#id_tahmo_station_code option', 'Demo Station {n} (TA{n5})')"
+  callouts:
+  - badge: { target: '#id_tahmo_station_code', n: 1 }
+  - badge: { target: '#id_start_date', n: 2 }
+  - badge: { target: '#id_variable_mappings-FORMS', n: 3 }
+  capture:
+    selector: "#w-editor-form"
+- name: tahmo_station_select
+  url: /tahmostationlink/edit/1/
+  setup:
+  - wait_until: "document.querySelector('#id_tahmo_station_code').options.length > 1"
+  # This set is captured against a real Data Hub account, so the pages carry
+  # that account's station names and codes. Substituted for demo identifiers
+  # before the shot; nothing else on the page is touched.
+  - eval: "maskLabels('#id_tahmo_station_code option', 'Demo Station {n} (TA{n5})')"
+  callouts:
+  - highlight: '#id_tahmo_station_code'
+  capture:
+    selector: '#panel-tahmo_station_code-section'
+- name: tahmo_variable_select
+  url: /tahmostationlink/edit/1/
+  setup:
+  - wait_until: "document.querySelector('#id_variable_mappings-0-tahmo_variable_shortcode').options.length > 1"
+  callouts:
+  - badge: { target: '#id_variable_mappings-0-tahmo_variable_shortcode', n: 1 }
+  # the chooser, not the field: tahmo_parameter_unit itself renders as a hidden
+  # input beside the widget, and a callout on a 0x0 element is refused
+  - badge: { target: '#id_variable_mappings-0-tahmo_parameter_unit-chooser', n: 2 }
+  capture:
+    selector: '#inline_child_variable_mappings-0'
+- name: tahmo_view_metadata_button
+  url: /connections/
+  setup:
+  - click: 'table .w-dropdown__toggle'
+  - wait_until: "document.querySelectorAll('a[href*=\"adl-tahmo-plugin/metadata/\"]').length > 0"
+  callouts:
+  - highlight: a[href*="adl-tahmo-plugin/metadata/"]
+  capture:
+    selector: '.plugin-panel'
+- name: tahmo_metadata_page
+  url: /adl-tahmo-plugin/metadata/1/
+  setup:
+  # the real roster of the account this is captured against; the row count and
+  # the page's shape are untouched, only the identifiers in each cell
+  - eval: "maskLabels('table.listing tbody td', 'Demo Station {n} (TA{n5})')"
+  - eval: "fitMain()"
+  capture:
+    selector: main
+    max_height: 960
+- name: tahmo_ingestion_diagnostic
+  url: /monitoring/connection/1/health/
+  callouts:
+  - highlight: .health-probe-form button
+  capture:
+    selector: .health-diagnostic
+- name: tahmo_station_source_check
+  url: /tahmostationlink/inspect/1/
+  setup:
+  # the message names the real station this ran against; the verdict, the
+  # latency and the wording are left exactly as the check produced them
+  - eval: "maskText('main', 'Station TA[0-9]+', 'Station TA00001')"
+  - eval: "maskText('main', 'found upstream as \"[^\"]*\"', 'found upstream as \"Demo Station 1\"')"
+  capture:
+    selector: ":nth-match(.collection-status, 2)"
