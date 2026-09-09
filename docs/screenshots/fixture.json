@@ -1,0 +1,94 @@
+{
+  "capture": {
+    "connection": "TAHMO Data Hub (demo)",
+    "ingest": true,
+    "probe": true,
+    "station_checks": [
+      "DEMO001"
+    ],
+    "wait": 240,
+    "present_interval": 15
+  },
+  "connection": {
+    "model": "adl_tahmo_plugin.TahmoConnection",
+    "fields": {
+      "name": "TAHMO Data Hub (demo)",
+      "plugin": "adl_tahmo_plugin",
+      "stations_timezone": "Africa/Nairobi",
+      "plugin_processing_interval": 1,
+      "api_key": "$ENV:TAHMO_API_KEY|demo-api-key",
+      "api_secret": "$ENV:TAHMO_API_SECRET|demo-api-secret"
+    }
+  },
+  "station_links": [
+    {
+      "model": "adl_tahmo_plugin.TahmoStationLink",
+      "station": "DEMO001",
+      "fields": {
+        "tahmo_station_code": "$ENV:TAHMO_STATION_CODE|TA00001",
+        "start_date": "$NOW-1d"
+      },
+      "children": {
+        "variable_mappings": [
+          {
+            "adl_parameter": "Air Temperature",
+            "tahmo_variable_shortcode": "te",
+            "tahmo_parameter_unit": "degC"
+          },
+          {
+            "adl_parameter": "Relative Humidity",
+            "tahmo_variable_shortcode": "rh",
+            "tahmo_parameter_unit": "percent"
+          },
+          {
+            "adl_parameter": "Atmospheric Pressure",
+            "tahmo_variable_shortcode": "ap",
+            "tahmo_parameter_unit": "hPa"
+          },
+          {
+            "adl_parameter": "Precipitation",
+            "tahmo_variable_shortcode": "pr",
+            "tahmo_parameter_unit": "mm"
+          },
+          {
+            "adl_parameter": "Wind Speed",
+            "tahmo_variable_shortcode": "ws",
+            "tahmo_parameter_unit": "m/s"
+          },
+          {
+            "adl_parameter": "Wind Direction",
+            "tahmo_variable_shortcode": "wd",
+            "tahmo_parameter_unit": "degree"
+          },
+          {
+            "adl_parameter": "Solar Radiation",
+            "tahmo_variable_shortcode": "ra",
+            "tahmo_parameter_unit": "W/m^2"
+          }
+        ]
+      }
+    },
+    {
+      "model": "adl_tahmo_plugin.TahmoStationLink",
+      "station": "DEMO002",
+      "fields": {
+        "tahmo_station_code": "$ENV:TAHMO_STATION_CODE_2|TA00002",
+        "start_date": "$NOW-1d"
+      },
+      "children": {
+        "variable_mappings": [
+          {
+            "adl_parameter": "Air Temperature",
+            "tahmo_variable_shortcode": "te",
+            "tahmo_parameter_unit": "degC"
+          },
+          {
+            "adl_parameter": "Precipitation",
+            "tahmo_variable_shortcode": "pr",
+            "tahmo_parameter_unit": "mm"
+          }
+        ]
+      }
+    }
+  ]
+}
